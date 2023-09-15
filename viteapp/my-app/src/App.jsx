@@ -7,9 +7,11 @@ let canUpdate = true
 
 function App() {
     const [countries, setCountries] = useState([]);
-    const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
+    const [cursors, setCursors] = useState([{ x: 0, y: 0 }]);
     
     const [channelUpdate, setChannelUpdate] = useState(false);
+    
+    const userId = 4;
 
     useEffect(() => {
         window.addEventListener("mousemove", async (e) => {
@@ -17,19 +19,13 @@ function App() {
             
             if(canUpdate) {
                 canUpdate = false
-
-                const {data: existingMousePos} = await supabase.from("mousecursortest").select().eq("id", 1)
-
-                if (!existingMousePos.length > 0) {
-                    const {data, error} = await supabase.from("mousecursortest").insert({id: 1, x: 0, y: 0})
-                }
-
-                await supabase.from("mousecursortest").update({x: e.clientX, y: e.clientY}).eq("id", 1)
+                
+                await supabase.from("mousecursortest").upsert({id: userId, x: e.clientX, y: e.clientY})
             }
 
             window.setTimeout(() => {
                 canUpdate = true
-            }, 100)
+            }, 50)
         });
     }, []);
 
@@ -42,9 +38,15 @@ function App() {
                 schema: 'public',
             },
             (payload) => {
-                if(payload.table === "mousecursortest") {
-                    setCursorPosition({x: payload.new.x, y: payload.new.y})
-                }
+                const cursors = supabase.from("mousecursortest").select("*").then(({data}) => {
+                    setCursors(data.map(cursor => {return {x: cursor.x, y: cursor.y}}))
+                })
+                
+                /*if(payload.table === "mousecursortest") {
+                    if(payload.new.id === userId) {
+                        setCursorPosition({x: payload.new.x, y: payload.new.y})
+                    }
+                }*/
             }
         )
         .subscribe()
@@ -56,9 +58,20 @@ function App() {
                 <li key={country.name}>{country.name}</li>
             ))}
         </ul>
-            <div style={{backgroundColor: "red", transform: `translateX`}}></div>
+            {cursors.map(cursor => 
+                <div style={{
+                    backgroundColor: "red",
+                    transform: `translateX(${cursor.x}px) translateY(${cursor.y}px)`,
+                    width: "20px",
+                    height: "20px",
+                    borderRadius: "50%",
+                    position: "fixed",
+                    top: 0,
+                    left: 0
+                }}></div>
+            )}
+
             
-            <p>Cursor position: x: {cursorPosition.x} y: {cursorPosition.y}</p>
         </>
     );
 }
