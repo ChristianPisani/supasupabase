@@ -6,7 +6,7 @@ const supabase = createClient("http://localhost:54321", "eyJhbGciOiJIUzI1NiIsInR
 let canUpdate = true
 
 function App() {
-    const [cursors, setCursors] = useState([{x: 0, y: 0}]);
+    const [notes, setNotes] = useState([{x: 0, y: 0}]);
 
     const signIn = async () => {
         const {data} = await supabase.auth.signInWithPassword({
@@ -21,7 +21,13 @@ function App() {
             if (canUpdate) {
                 canUpdate = false
 
-                await supabase.from("mousecursortest").upsert({"user_id": user.id, x: e.clientX, y: e.clientY})
+                await supabase.from("note").upsert({
+                    "user_id": user.id,
+                    x: e.clientX,
+                    y: e.clientY,
+                    "category_id": 0,
+                    "board_id": 0
+                })
             }
 
             window.setTimeout(() => {
@@ -43,8 +49,8 @@ function App() {
                 schema: 'public',
             },
             () => {
-                supabase.from("mousecursortest").select("*").then(({data}) => {
-                    setCursors(data.map(cursor => {
+                supabase.from("note").select("*").then(({data}) => {
+                    setNotes(data.map(cursor => {
                         return {x: cursor.x, y: cursor.y}
                     }))
                 })
@@ -54,7 +60,7 @@ function App() {
 
     return (
         <>
-            {cursors.map((cursor, index) =>
+            {notes.map((cursor, index) =>
                 <di key={index} style={{
                     backgroundColor: "red",
                     transform: `translateX(${cursor.x}px) translateY(${cursor.y}px)`,
