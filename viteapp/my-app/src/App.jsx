@@ -95,7 +95,7 @@ function App() {
                     left: 0,
                     userSelect: "none",
                 }}>
-                    <input value={noteText} onChange={async (e) => {
+                    <input value={note.text} onChange={async (e) => {
                         noteText = e.target.value
                         await updateNote()
                     }}></input>
