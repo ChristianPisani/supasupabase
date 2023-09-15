@@ -5,15 +5,36 @@ const supabase = createClient("http://localhost:54321", "eyJhbGciOiJIUzI1NiIsInR
 
 function App() {
     const [countries, setCountries] = useState([]);
+    
+    const [channelUpdate, setChannelUpdate] = useState(false);
 
     useEffect(() => {
         getCountries();
     }, []);
+    
+    useEffect(() => {
+        console.log("channelUpdate", channelUpdate)
+        getCountries()
+    }, [channelUpdate])
 
     async function getCountries() {
         const { data } = await supabase.from("countries").select();
         setCountries(data);
     }
+
+    const channel = supabase
+        .channel('schema-db-changes')
+        .on(
+            'postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+            },
+            (payload) => {
+                setChannelUpdate(!channelUpdate)
+            }
+        )
+        .subscribe()
 
     return (
         <ul>
