@@ -123,6 +123,7 @@ function App() {
                     top: 0,
                     left: 0,
                     borderRadius: "50%",
+                    opacity: 0.5,
                 }}/>
             )}
         </>
