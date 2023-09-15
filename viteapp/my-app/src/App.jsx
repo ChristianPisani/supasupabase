@@ -12,6 +12,7 @@ let cursorY = 0
 
 function App() {
     const [notes, setNotes] = useState([]);
+    const [cursors, setCursors] = useState([]);
 
     addEventListener("mousedown", () => {
         cursorDown = true
@@ -30,6 +31,13 @@ function App() {
             "board_id": 0
         })
     }
+    const updateCursor = async () => {
+        await supabase.from("mousecursortest").upsert({
+            "user_id": userId,
+            x: cursorX,
+            y: cursorY,
+        })
+    }
     const signIn = async () => {
         const {data} = await supabase.auth.signInWithPassword({
             email: 'christian.thorvik@adventuretech.no',
@@ -43,7 +51,7 @@ function App() {
         noteText = note.data[0]?.text || ""
 
         window.addEventListener("mousemove", async (e) => {
-            if (!user.id || !canUpdate || !cursorDown || (e.clientX === 0 && e.clientY === 0)) return
+            if (!user.id || !canUpdate || (e.clientX === 0 && e.clientY === 0)) return
 
             if (canUpdate) {
                 canUpdate = false
@@ -51,7 +59,8 @@ function App() {
                 cursorX = e.clientX
                 cursorY = e.clientY
 
-                await updateNote()
+                if (cursorDown) await updateNote()
+                await updateCursor()
             }
 
             window.setTimeout(() => {
@@ -77,6 +86,9 @@ function App() {
                     setNotes(data)
                     noteText = data.find(note => note["user_id"] === userId)?.text || ""
                 })
+                supabase.from("mousecursortest").select("*").then(({data}) => {
+                    setCursors(data)
+                })
             }
         )
         .subscribe()
@@ -101,8 +113,18 @@ function App() {
                     }}></input>
                 </div>
             )}
-
-
+            {cursors.map((cursor, index) =>
+                <div key={index} style={{
+                    backgroundColor: "red",
+                    transform: `translateX(${cursor.x}px) translateY(${cursor.y}px)`,
+                    width: "20px",
+                    height: "20px",
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    borderRadius: "50%",
+                }}/>
+            )}
         </>
     );
 }
